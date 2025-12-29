@@ -169,51 +169,60 @@
                     const div = document.createElement('div');
                     div.className = 'list-item';
                     div.dataset.index = index;
-                    div.innerHTML = `
-                        <div class="list-item-header">
-                            <label>
-                                <input type="checkbox" class="list-enabled" is="emby-checkbox" ${list.Enabled !== false ? 'checked' : ''} />
-                                <span>Enabled</span>
-                            </label>
-                            <button type="button" class="btn-remove-list" is="emby-button">Remove</button>
-                        </div>
-                        <div class="list-item-fields">
-                            <div class="inputContainer">
-                                <label class="inputLabel">Trakt List ID</label>
-                                <input type="text" class="list-id" is="emby-input" value="${list.ListId || ''}" placeholder="33354427" />
-                            </div>
-                            <div class="inputContainer">
-                                <label class="inputLabel">Slug (for tagging)</label>
-                                <input type="text" class="list-slug" is="emby-input" value="${list.Slug || ''}" placeholder="mcu" />
-                            </div>
-                            <div class="inputContainer">
-                                <label class="inputLabel">Collection Name (optional)</label>
-                                <input type="text" class="list-name" is="emby-input" value="${list.CollectionName || ''}" placeholder="Use Trakt name" />
-                            </div>
-                            <div class="inputContainer">
-                                <label class="inputLabel">Sort Title (optional)</label>
-                                <input type="text" class="list-sort-title" is="emby-input" value="${list.SortTitle || ''}" placeholder="!040 MCU" />
-                            </div>
-                            <div class="inputContainer">
-                                <label class="inputLabel">Custom Poster Path (optional)</label>
-                                <input type="text" class="list-poster" is="emby-input" value="${list.PosterPath || ''}" placeholder="/config/posters/mcu.jpg" />
-                            </div>
-                            <div class="checkboxContainer">
-                                <label>
-                                    <input type="checkbox" class="list-clear" is="emby-checkbox" ${list.ClearBeforeSync !== false ? 'checked' : ''} />
-                                    <span>Clear before sync</span>
-                                </label>
-                            </div>
-                            <div class="checkboxContainer">
-                                <label>
-                                    <input type="checkbox" class="list-preserve-order" is="emby-checkbox" ${list.PreserveSortOrder !== false ? 'checked' : ''} />
-                                    <span>Preserve list order</span>
-                                </label>
-                            </div>
-                        </div>
-                    `;
+                    
+                    const listId = list.ListId || '';
+                    const slug = list.Slug || '';
+                    const collectionName = list.CollectionName || '';
+                    const sortTitle = list.SortTitle || '';
+                    const posterPath = list.PosterPath || '';
+                    const enabledChecked = list.Enabled !== false ? 'checked' : '';
+                    const clearChecked = list.ClearBeforeSync !== false ? 'checked' : '';
+                    const preserveChecked = list.PreserveSortOrder !== false ? 'checked' : '';
+                    
+                    div.innerHTML = 
+                        '<div class="list-item-header">' +
+                            '<label>' +
+                                '<input type="checkbox" class="list-enabled" is="emby-checkbox" ' + enabledChecked + ' />' +
+                                '<span>Enabled</span>' +
+                            '</label>' +
+                            '<button type="button" class="btn-remove-list" is="emby-button">Remove</button>' +
+                        '</div>' +
+                        '<div class="list-item-fields">' +
+                            '<div class="inputContainer">' +
+                                '<label class="inputLabel">Trakt List ID</label>' +
+                                '<input type="text" class="list-id" is="emby-input" value="' + listId + '" placeholder="33354427" />' +
+                            '</div>' +
+                            '<div class="inputContainer">' +
+                                '<label class="inputLabel">Slug (for tagging)</label>' +
+                                '<input type="text" class="list-slug" is="emby-input" value="' + slug + '" placeholder="mcu" />' +
+                            '</div>' +
+                            '<div class="inputContainer">' +
+                                '<label class="inputLabel">Collection Name (optional)</label>' +
+                                '<input type="text" class="list-name" is="emby-input" value="' + collectionName + '" placeholder="Use Trakt name" />' +
+                            '</div>' +
+                            '<div class="inputContainer">' +
+                                '<label class="inputLabel">Sort Title (optional)</label>' +
+                                '<input type="text" class="list-sort-title" is="emby-input" value="' + sortTitle + '" placeholder="!040 MCU" />' +
+                            '</div>' +
+                            '<div class="inputContainer">' +
+                                '<label class="inputLabel">Custom Poster Path (optional)</label>' +
+                                '<input type="text" class="list-poster" is="emby-input" value="' + posterPath + '" placeholder="/config/posters/mcu.jpg" />' +
+                            '</div>' +
+                            '<div class="checkboxContainer">' +
+                                '<label>' +
+                                    '<input type="checkbox" class="list-clear" is="emby-checkbox" ' + clearChecked + ' />' +
+                                    '<span>Clear before sync</span>' +
+                                '</label>' +
+                            '</div>' +
+                            '<div class="checkboxContainer">' +
+                                '<label>' +
+                                    '<input type="checkbox" class="list-preserve-order" is="emby-checkbox" ' + preserveChecked + ' />' +
+                                    '<span>Preserve list order</span>' +
+                                '</label>' +
+                            '</div>' +
+                        '</div>';
 
-                    div.querySelector('.btn-remove-list').addEventListener('click', () => div.remove());
+                    div.querySelector('.btn-remove-list').addEventListener('click', function() { div.remove(); });
                     container.appendChild(div);
                 },
 
@@ -247,24 +256,28 @@
                     const div = document.createElement('div');
                     div.className = 'mapping-item';
                     div.dataset.index = index;
-                    div.innerHTML = `
-                        <div class="mapping-item-header">
-                            <span>Path Mapping ${index + 1}</span>
-                            <button type="button" class="btn-remove-mapping" is="emby-button">Remove</button>
-                        </div>
-                        <div class="mapping-item-fields">
-                            <div class="inputContainer">
-                                <label class="inputLabel">Jellyfin Path (From)</label>
-                                <input type="text" class="mapping-from" is="emby-input" value="${mapping.From || ''}" placeholder="/media" />
-                            </div>
-                            <div class="inputContainer">
-                                <label class="inputLabel">Actual Path (To)</label>
-                                <input type="text" class="mapping-to" is="emby-input" value="${mapping.To || ''}" placeholder="/mnt/user/media" />
-                            </div>
-                        </div>
-                    `;
+                    
+                    const fromPath = mapping.From || '';
+                    const toPath = mapping.To || '';
+                    const mappingNum = index + 1;
+                    
+                    div.innerHTML = 
+                        '<div class="mapping-item-header">' +
+                            '<span>Path Mapping ' + mappingNum + '</span>' +
+                            '<button type="button" class="btn-remove-mapping" is="emby-button">Remove</button>' +
+                        '</div>' +
+                        '<div class="mapping-item-fields">' +
+                            '<div class="inputContainer">' +
+                                '<label class="inputLabel">Jellyfin Path (From)</label>' +
+                                '<input type="text" class="mapping-from" is="emby-input" value="' + fromPath + '" placeholder="/media" />' +
+                            '</div>' +
+                            '<div class="inputContainer">' +
+                                '<label class="inputLabel">Actual Path (To)</label>' +
+                                '<input type="text" class="mapping-to" is="emby-input" value="' + toPath + '" placeholder="/mnt/user/media" />' +
+                            '</div>' +
+                        '</div>';
 
-                    div.querySelector('.btn-remove-mapping').addEventListener('click', () => div.remove());
+                    div.querySelector('.btn-remove-mapping').addEventListener('click', function() { div.remove(); });
                     container.appendChild(div);
                 },
 
@@ -376,10 +389,10 @@
                 return false;
             });
 
-            document.getElementById('btnAddList').addEventListener('click', () => UniverseCollectionsConfig.addListItem());
-            document.getElementById('btnAddMapping').addEventListener('click', () => UniverseCollectionsConfig.addPathMappingItem());
-            document.getElementById('btnSyncNow').addEventListener('click', () => UniverseCollectionsConfig.syncNow());
-            document.getElementById('btnAuthTrakt').addEventListener('click', () => UniverseCollectionsConfig.authTrakt());
+            document.getElementById('btnAddList').addEventListener('click', function() { UniverseCollectionsConfig.addListItem(); });
+            document.getElementById('btnAddMapping').addEventListener('click', function() { UniverseCollectionsConfig.addPathMappingItem(); });
+            document.getElementById('btnSyncNow').addEventListener('click', function() { UniverseCollectionsConfig.syncNow(); });
+            document.getElementById('btnAuthTrakt').addEventListener('click', function() { UniverseCollectionsConfig.authTrakt(); });
 
             UniverseCollectionsConfig.loadConfig();
         </script>
