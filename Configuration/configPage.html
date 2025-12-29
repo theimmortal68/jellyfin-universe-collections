@@ -290,7 +290,7 @@
                     }).then(() => {
                         status.textContent = 'Sync started! Check server logs for progress.';
                     }).catch(err => {
-                        status.textContent = 'Error: ' + err;
+                        status.textContent = 'Error: ' + (err.message || err);
                     });
                 },
 
@@ -311,15 +311,15 @@
                         type: 'POST',
                         contentType: 'application/json',
                         data: JSON.stringify({ clientId, clientSecret })
-                    }).then(response => {
-                        response.json().then(data => {
-                            if (data.userCode) {
-                                status.innerHTML = `Go to <a href="${data.verificationUrl}" target="_blank">${data.verificationUrl}</a> and enter code: <strong>${data.userCode}</strong>`;
-                                this.pollTraktAuth(data.deviceCode, data.interval);
-                            }
-                        });
+                    }).then(data => {
+                        if (data.userCode) {
+                            status.innerHTML = `Go to <a href="${data.verificationUrl}" target="_blank">${data.verificationUrl}</a> and enter code: <strong>${data.userCode}</strong>`;
+                            this.pollTraktAuth(data.deviceCode, data.interval);
+                        } else {
+                            status.textContent = 'Error: No user code received';
+                        }
                     }).catch(err => {
-                        status.textContent = 'Error: ' + err;
+                        status.textContent = 'Error: ' + (err.message || err);
                     });
                 },
 
@@ -334,14 +334,14 @@
                             type: 'POST',
                             contentType: 'application/json',
                             data: JSON.stringify({ clientId, clientSecret, deviceCode })
-                        }).then(response => {
-                            response.json().then(data => {
-                                if (data.accessToken) {
-                                    clearInterval(poll);
-                                    document.getElementById('txtTraktAccessToken').value = data.accessToken;
-                                    status.textContent = 'Authentication successful!';
-                                }
-                            });
+                        }).then(data => {
+                            if (data.accessToken) {
+                                clearInterval(poll);
+                                document.getElementById('txtTraktAccessToken').value = data.accessToken;
+                                status.textContent = 'Authentication successful!';
+                            }
+                        }).catch(err => {
+                            // Polling error - user hasn't authorized yet, keep waiting
                         });
                     }, (interval + 1) * 1000);
                 }
