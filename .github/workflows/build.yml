@@ -60,6 +60,21 @@ jobs:
             universe-collections-${{ steps.version.outputs.version }}.zip
             bin/Release/net8.0/UniverseCollections.dll
 
+      - name: Save version and checksum for release job
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          echo "${{ steps.version.outputs.version }}" > version.txt
+          echo "${{ steps.checksum.outputs.checksum }}" > checksum.txt
+
+      - name: Upload version info
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@v4
+        with:
+          name: version-info
+          path: |
+            version.txt
+            checksum.txt
+
   release:
     needs: build
     runs-on: ubuntu-latest
@@ -69,19 +84,60 @@ jobs:
       contents: write
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: UniverseCollections
 
-      - name: Get version
-        id: version
+      - name: Download version info
+        uses: actions/download-artifact@v4
+        with:
+          name: version-info
+
+      - name: Read version and checksum
+        id: info
         run: |
-          VERSION="${GITHUB_REF#refs/tags/v}"
+          VERSION=$(cat version.txt)
+          CHECKSUM=$(cat checksum.txt)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "checksum=$CHECKSUM" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+          echo "Checksum: $CHECKSUM"
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: universe-collections-${{ steps.version.outputs.version }}.zip
+          files: universe-collections-${{ steps.info.outputs.version }}.zip
           generate_release_notes: true
+
+      - name: Update manifest.json
+        run: |
+          VERSION="${{ steps.info.outputs.version }}"
+          CHECKSUM="${{ steps.info.outputs.checksum }}"
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          
+          # Update the manifest with new version info
+          jq --arg ver "$VERSION" \
+             --arg sum "$CHECKSUM" \
+             --arg ts "$TIMESTAMP" \
+             --arg url "https://github.com/theimmortal68/jellyfin-universe-collections/releases/download/v$VERSION/universe-collections-$VERSION.zip" \
+             '.[0].versions[0].version = $ver | 
+              .[0].versions[0].checksum = $sum | 
+              .[0].versions[0].timestamp = $ts |
+              .[0].versions[0].sourceUrl = $url' \
+             manifest.json > manifest.json.tmp && mv manifest.json.tmp manifest.json
+          
+          cat manifest.json
+
+      - name: Commit updated manifest
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add manifest.json
+          git commit -m "Update manifest for v${{ steps.info.outputs.version }}" || echo "No changes to commit"
+          git push origin HEAD:main
