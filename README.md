@@ -1,13 +1,13 @@
 # Universe Collections
 
-[![Build Plugin](https://github.com/your-username/UniverseCollections/actions/workflows/build.yml/badge.svg)](https://github.com/your-username/UniverseCollections/actions/workflows/build.yml)
+[![Build Plugin](https://github.com/theimmortal68/jellyfin-universe-collections/actions/workflows/build.yml/badge.svg)](https://github.com/theimmortal68/jellyfin-universe-collections/actions/workflows/build.yml)
 
-A Jellyfin plugin that syncs Trakt lists to collections with Wholphin tagging support.
+A Jellyfin plugin that syncs Trakt lists to collections with tagging for advanced client customizations.
 
 ## Features
 
 - Sync Trakt lists to Jellyfin collections
-- Tag collections and items with `jac:{slug}` for Wholphin queries
+- Tag collections and items with `universe-collection:{slug}` for client-side queries
 - Custom collection names, sort titles, and posters
 - Preserve list order via file mtime manipulation
 - Configurable via Jellyfin admin UI
@@ -17,7 +17,7 @@ A Jellyfin plugin that syncs Trakt lists to collections with Wholphin tagging su
 
 ### From GitHub Releases (Recommended)
 
-1. Download `UniverseCollections.dll` from the [latest release](https://github.com/your-username/UniverseCollections/releases/latest)
+1. Download `UniverseCollections.dll` from the [latest release](https://github.com/theimmortal68/jellyfin-universe-collections/releases/latest)
 2. Create the plugin folder:
    - Linux: `/var/lib/jellyfin/plugins/UniverseCollections/`
    - Docker: `/config/plugins/UniverseCollections/`
@@ -30,7 +30,7 @@ A Jellyfin plugin that syncs Trakt lists to collections with Wholphin tagging su
 Prerequisites: .NET 8 SDK
 
 ```bash
-git clone https://github.com/your-username/UniverseCollections.git
+git clone https://github.com/theimmortal68/jellyfin-universe-collections.git
 cd UniverseCollections
 dotnet build --configuration Release
 ```
@@ -48,7 +48,7 @@ The plugin DLL will be in `bin/Release/net8.0/UniverseCollections.dll`
    - **To**: Actual filesystem path (e.g., `/mnt/user/media`)
 5. Add your lists with:
    - **List ID**: Trakt list ID (e.g., `33354427`)
-   - **Slug**: URL-safe identifier for Wholphin (e.g., `mcu`)
+   - **Slug**: URL-safe identifier for tagging (e.g., `mcu`)
    - **Collection Name**: Optional override
    - **Sort Title**: For collection ordering (e.g., `!040 MCU`)
    - **Poster Path**: Path to custom poster image
@@ -75,24 +75,24 @@ If Jellyfin sees media at `/media/movies` but the actual path is `/mnt/user/medi
 
 This is required for the "Preserve List Order" feature to work, as it needs to modify file timestamps.
 
-## Wholphin Integration
+## Client Integration
 
 After sync, query collections and items by tag:
 
 ```kotlin
 // Get all Universe Collections
-GET /Items?IncludeItemTypes=BoxSet&Tags=jac
+GET /Items?IncludeItemTypes=BoxSet&Tags=universe-collection
 
 // Get movies in MCU collection
-GET /Items?IncludeItemTypes=Movie&Tags=jac:mcu
+GET /Items?IncludeItemTypes=Movie&Tags=universe-collection:mcu
 ```
 
 ## Tags Applied
 
 | Tag | Applied To | Purpose |
 |-----|-----------|---------|
-| `jac` | Collections | Identifies plugin-managed collections |
-| `jac:{slug}` | Collections + Items | Links items to their collection |
+| `universe-collection` | Collections | Identifies plugin-managed collections |
+| `universe-collection:{slug}` | Collections + Items | Links items to their collection |
 
 ## Scheduled Task
 

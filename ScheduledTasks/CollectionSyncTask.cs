@@ -29,7 +29,7 @@ public class CollectionSyncTask : IScheduledTask
     public string Key => "UniverseCollectionsSync";
 
     /// <inheritdoc />
-    public string Description => "Syncs configured Trakt lists to Jellyfin collections with Wholphin tagging.";
+    public string Description => "Syncs configured Trakt lists to Jellyfin collections with tagging.";
 
     /// <inheritdoc />
     public string Category => "Library";

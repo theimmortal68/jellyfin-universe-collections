@@ -130,7 +130,7 @@ public class CollectionSyncService
         }
 
         // Build tags for this collection
-        var collectionTags = new List<string> { "jac", $"jac:{slug}" };
+        var collectionTags = new List<string> { "universe-collection", $"universe-collection:{slug}" };
 
         // Tag the collection
         await SetItemTagsAsync(collection, collectionTags, cancellationToken);
@@ -169,7 +169,7 @@ public class CollectionSyncService
                 matchedItems.Add(matchedItem);
 
                 // Tag the item
-                await AddTagToItemAsync(matchedItem, $"jac:{slug}", cancellationToken);
+                await AddTagToItemAsync(matchedItem, $"universe-collection:{slug}", cancellationToken);
 
                 _logger.LogInformation("Added: {Title} ({Year})", title, year);
             }
@@ -307,8 +307,8 @@ public class CollectionSyncService
     {
         var existingTags = item.Tags?.ToList() ?? new List<string>();
         
-        // Remove existing jac tags
-        existingTags.RemoveAll(t => t.StartsWith("jac"));
+        // Remove existing universe-collection tags
+        existingTags.RemoveAll(t => t.StartsWith("universe-collection"));
         
         // Add new tags
         existingTags.AddRange(tags);

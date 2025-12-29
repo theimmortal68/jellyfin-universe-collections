@@ -26,7 +26,7 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     public override Guid Id => Guid.Parse("a1b2c3d4-e5f6-7890-abcd-ef1234567890");
 
     /// <inheritdoc />
-    public override string Description => "Sync Trakt lists to Jellyfin collections with Wholphin tagging support.";
+    public override string Description => "Sync Trakt lists to Jellyfin collections with tagging for advanced client customizations.";
 
     /// <summary>
     /// Gets the current plugin instance.

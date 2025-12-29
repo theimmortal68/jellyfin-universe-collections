@@ -77,7 +77,7 @@ public class TraktListConfig
     public string? CollectionName { get; set; }
 
     /// <summary>
-    /// Gets or sets the slug for Wholphin tagging.
+    /// Gets or sets the slug for tagging.
     /// </summary>
     public string Slug { get; set; } = string.Empty;
 
