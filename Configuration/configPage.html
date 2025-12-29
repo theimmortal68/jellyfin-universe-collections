@@ -294,15 +294,18 @@
                 },
 
                 syncNow: function() {
-                    const status = document.getElementById('syncStatus');
+                    var status = document.getElementById('syncStatus');
                     status.textContent = 'Syncing...';
+                    console.log('Sync button clicked, calling API...');
                     
-                    ApiClient.ajax({
+                    ApiClient.fetch({
                         url: ApiClient.getUrl('UniverseCollections/Sync'),
                         type: 'POST'
-                    }).then(() => {
+                    }).then(function(response) {
+                        console.log('Sync response:', response);
                         status.textContent = 'Sync started! Check server logs for progress.';
-                    }).catch(err => {
+                    }).catch(function(err) {
+                        console.error('Sync error:', err);
                         status.textContent = 'Error: ' + (err.message || err);
                     });
                 },

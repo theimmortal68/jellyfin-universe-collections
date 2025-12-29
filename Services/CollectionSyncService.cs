@@ -72,7 +72,7 @@ public class CollectionSyncService
             return;
         }
 
-        foreach (var listConfig in config.TraktLists.Where(l => l.Enabled))
+        foreach (var listConfig in config.TraktLists.Where(l => l.Enabled && !string.IsNullOrEmpty(l.ListId)))
         {
             try
             {
@@ -202,12 +202,13 @@ public class CollectionSyncService
     private async Task<BoxSet?> FindOrCreateCollectionAsync(string name, CancellationToken cancellationToken)
     {
         // Search for existing collection
-        var existingCollections = _libraryManager.GetItemList(new InternalItemsQuery
+        var query = new InternalItemsQuery
         {
             IncludeItemTypes = new[] { BaseItemKind.BoxSet },
             Name = name,
             Recursive = true
-        });
+        };
+        var existingCollections = _libraryManager.GetItemList(query).ToList();
 
         var existing = existingCollections.FirstOrDefault() as BoxSet;
         if (existing != null)
@@ -251,12 +252,13 @@ public class CollectionSyncService
         // First try IMDB match
         if (!string.IsNullOrEmpty(imdbId))
         {
-            var items = _libraryManager.GetItemList(new InternalItemsQuery
+            var imdbQuery = new InternalItemsQuery
             {
                 IncludeItemTypes = itemTypes,
                 Recursive = true,
                 HasImdbId = true
-            });
+            };
+            var items = _libraryManager.GetItemList(imdbQuery).ToList();
 
             var imdbMatch = items.FirstOrDefault(i => 
                 i.GetProviderId(MetadataProvider.Imdb) == imdbId);
@@ -268,12 +270,13 @@ public class CollectionSyncService
         }
 
         // Fall back to title + year match
-        var titleMatches = _libraryManager.GetItemList(new InternalItemsQuery
+        var titleQuery = new InternalItemsQuery
         {
             IncludeItemTypes = itemTypes,
             SearchTerm = title,
             Recursive = true
-        });
+        };
+        var titleMatches = _libraryManager.GetItemList(titleQuery).ToList();
 
         // Exact title match with year
         var exactMatch = titleMatches.FirstOrDefault(i =>
