@@ -22,33 +22,39 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Restore dependencies
-        run: dotnet restore
-
-      - name: Build
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          # Convert version to 4-part format if needed (1.0.2 -> 1.0.2.0)
-          if [[ ! "$VERSION" =~ \. ]]; then
-            VERSION="$VERSION.0.0.0"
-          elif [[ $(echo "$VERSION" | tr -cd '.' | wc -c) -eq 1 ]]; then
-            VERSION="$VERSION.0.0"
-          elif [[ $(echo "$VERSION" | tr -cd '.' | wc -c) -eq 2 ]]; then
-            VERSION="$VERSION.0"
-          fi
-          echo "Assembly version: $VERSION"
-          dotnet build --configuration Release --no-restore -p:AssemblyVersion=$VERSION -p:FileVersion=$VERSION -p:Version=${{ steps.version.outputs.version }}
-
       - name: Get version
         id: version
         run: |
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             VERSION="${GITHUB_REF#refs/tags/v}"
           else
-            VERSION="0.0.0-dev"
+            VERSION="1.0.0"
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Version: $VERSION"
+          
+          # Convert to 4-part format for assembly version
+          if [[ ! "$VERSION" =~ \. ]]; then
+            ASMVER="$VERSION.0.0.0"
+          elif [[ $(echo "$VERSION" | tr -cd '.' | wc -c) -eq 1 ]]; then
+            ASMVER="$VERSION.0.0"
+          elif [[ $(echo "$VERSION" | tr -cd '.' | wc -c) -eq 2 ]]; then
+            ASMVER="$VERSION.0"
+          else
+            ASMVER="$VERSION"
+          fi
+          echo "assembly_version=$ASMVER" >> $GITHUB_OUTPUT
+          echo "Assembly Version: $ASMVER"
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: |
+          dotnet build --configuration Release --no-restore \
+            -p:AssemblyVersion=${{ steps.version.outputs.assembly_version }} \
+            -p:FileVersion=${{ steps.version.outputs.assembly_version }} \
+            -p:Version=${{ steps.version.outputs.version }}
 
       - name: Create release zip
         run: |
