@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using UniverseCollections.Configuration;
+using Jellyfin.Data.Enums;
 using MediaBrowser.Controller.Collections;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
@@ -338,7 +339,8 @@ public class CollectionSyncService
                 ? "image/png" 
                 : "image/jpeg";
 
-            await _providerManager.SaveImage(collection, imageBytes, mimeType, ImageType.Primary, null, cancellationToken);
+            using var stream = new MemoryStream(imageBytes);
+            await _providerManager.SaveImage(collection, stream, mimeType, ImageType.Primary, null, cancellationToken);
             _logger.LogInformation("Uploaded custom poster from {Path}", posterPath);
         }
         catch (Exception ex)
