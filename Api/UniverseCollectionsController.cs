@@ -60,8 +60,11 @@ public class UniverseCollectionsController : ControllerBase
         [FromBody] TraktAuthRequest request,
         CancellationToken cancellationToken)
     {
+        _logger.LogInformation("TraktAuth called with ClientId length: {Length}", request.ClientId?.Length ?? 0);
+        
         if (string.IsNullOrEmpty(request.ClientId))
         {
+            _logger.LogError("TraktAuth: Client ID is empty");
             return BadRequest("Client ID is required");
         }
 
@@ -69,9 +72,12 @@ public class UniverseCollectionsController : ControllerBase
         
         if (deviceCode == null)
         {
+            _logger.LogError("TraktAuth: Failed to get device code from Trakt");
             return BadRequest("Failed to get device code from Trakt");
         }
 
+        _logger.LogInformation("TraktAuth: Got device code, user code: {UserCode}", deviceCode.UserCode);
+        
         return Ok(new TraktAuthResponse
         {
             DeviceCode = deviceCode.DeviceCode,

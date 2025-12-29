@@ -31,6 +31,7 @@ public class TraktService
         client.BaseAddress = new Uri(TraktApiBaseUrl);
         client.DefaultRequestHeaders.Add("trakt-api-version", "2");
         client.DefaultRequestHeaders.Add("trakt-api-key", clientId);
+        client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
         
         if (!string.IsNullOrEmpty(accessToken))
         {
@@ -47,14 +48,20 @@ public class TraktService
     {
         using var client = CreateClient(clientId);
         
-        var response = await client.PostAsJsonAsync("/oauth/device/code", new { client_id = clientId }, cancellationToken);
+        var content = new StringContent(
+            JsonSerializer.Serialize(new { client_id = clientId }),
+            System.Text.Encoding.UTF8,
+            "application/json");
+        
+        var response = await client.PostAsync("/oauth/device/code", content, cancellationToken);
         
         if (response.IsSuccessStatusCode)
         {
             return await response.Content.ReadFromJsonAsync<TraktDeviceCode>(cancellationToken: cancellationToken);
         }
 
-        _logger.LogError("Failed to get device code: {Status}", response.StatusCode);
+        var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+        _logger.LogError("Failed to get device code: {Status} - {Error}", response.StatusCode, errorContent);
         return null;
     }
 
@@ -65,12 +72,17 @@ public class TraktService
     {
         using var client = CreateClient(clientId);
 
-        var response = await client.PostAsJsonAsync("/oauth/device/token", new
-        {
-            client_id = clientId,
-            client_secret = clientSecret,
-            code = deviceCode
-        }, cancellationToken);
+        var content = new StringContent(
+            JsonSerializer.Serialize(new
+            {
+                client_id = clientId,
+                client_secret = clientSecret,
+                code = deviceCode
+            }),
+            System.Text.Encoding.UTF8,
+            "application/json");
+
+        var response = await client.PostAsync("/oauth/device/token", content, cancellationToken);
 
         if (response.IsSuccessStatusCode)
         {
