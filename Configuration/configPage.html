@@ -311,15 +311,38 @@
                         type: 'POST',
                         contentType: 'application/json',
                         data: JSON.stringify({ clientId, clientSecret })
-                    }).then(data => {
-                        // C# returns PascalCase properties
-                        if (data.UserCode) {
-                            status.innerHTML = `Go to <a href="${data.VerificationUrl}" target="_blank">${data.VerificationUrl}</a> and enter code: <strong>${data.UserCode}</strong>`;
-                            this.pollTraktAuth(data.DeviceCode, data.Interval);
+                    }).then(response => {
+                        console.log('TraktAuth raw response:', response);
+                        console.log('TraktAuth response type:', typeof response);
+                        
+                        // Parse if string
+                        let data = response;
+                        if (typeof response === 'string') {
+                            try {
+                                data = JSON.parse(response);
+                            } catch (e) {
+                                console.error('Failed to parse response:', e);
+                            }
+                        }
+                        
+                        console.log('TraktAuth parsed data:', data);
+                        console.log('TraktAuth data keys:', data ? Object.keys(data) : 'null');
+                        
+                        // Handle both camelCase and PascalCase
+                        const userCode = data.UserCode || data.userCode;
+                        const deviceCode = data.DeviceCode || data.deviceCode;
+                        const verificationUrl = data.VerificationUrl || data.verificationUrl;
+                        const interval = data.Interval || data.interval;
+                        
+                        if (userCode) {
+                            status.innerHTML = `Go to <a href="${verificationUrl}" target="_blank">${verificationUrl}</a> and enter code: <strong>${userCode}</strong>`;
+                            this.pollTraktAuth(deviceCode, interval);
                         } else {
-                            status.textContent = 'Error: No user code received';
+                            status.textContent = 'Error: No user code received. Check browser console (F12).';
+                            console.error('Full response:', JSON.stringify(data));
                         }
                     }).catch(err => {
+                        console.error('TraktAuth error:', err);
                         status.textContent = 'Error: ' + (err.message || err);
                     });
                 },
@@ -336,10 +359,11 @@
                             contentType: 'application/json',
                             data: JSON.stringify({ clientId, clientSecret, deviceCode })
                         }).then(data => {
-                            // C# returns PascalCase properties
-                            if (data.AccessToken) {
+                            console.log('Poll response:', data);
+                            const accessToken = data.AccessToken || data.accessToken;
+                            if (accessToken) {
                                 clearInterval(poll);
-                                document.getElementById('txtTraktAccessToken').value = data.AccessToken;
+                                document.getElementById('txtTraktAccessToken').value = accessToken;
                                 status.textContent = 'Authentication successful!';
                             }
                         }).catch(err => {
