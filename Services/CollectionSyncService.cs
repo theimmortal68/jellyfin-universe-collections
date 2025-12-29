@@ -397,11 +397,20 @@ public class CollectionSyncService
 
             var actualPath = ApplyPathMappings(jellyfinPath, pathMappings);
 
-            // For folders (like movie folders), find the main video file
-            var targetPath = actualPath;
-            if (Directory.Exists(actualPath))
+            // Find the target file/folder to touch
+            string? targetPath = null;
+            
+            if (File.Exists(actualPath))
             {
+                // It's a file (single file movie)
+                targetPath = actualPath;
+            }
+            else if (Directory.Exists(actualPath))
+            {
+                // It's a folder - find a video file
                 var videoExtensions = new[] { ".mkv", ".mp4", ".avi", ".m4v", ".mov", ".wmv", ".ts", ".m2ts" };
+                
+                // First try direct children (movie folders)
                 var videoFile = Directory.GetFiles(actualPath)
                     .FirstOrDefault(f => videoExtensions.Contains(Path.GetExtension(f).ToLowerInvariant()));
                 
@@ -411,14 +420,33 @@ public class CollectionSyncService
                 }
                 else
                 {
-                    _logger.LogWarning("No video file found in folder: {Path}", actualPath);
-                    continue;
+                    // For TV shows, search recursively for the first video file
+                    try
+                    {
+                        videoFile = Directory.GetFiles(actualPath, "*.*", SearchOption.AllDirectories)
+                            .FirstOrDefault(f => videoExtensions.Contains(Path.GetExtension(f).ToLowerInvariant()));
+                        
+                        if (videoFile != null)
+                        {
+                            targetPath = videoFile;
+                        }
+                        else
+                        {
+                            // Fall back to touching the folder itself
+                            targetPath = actualPath;
+                            _logger.LogDebug("No video file found, will touch folder: {Path}", actualPath);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Error searching for video files in: {Path}", actualPath);
+                        targetPath = actualPath; // Fall back to folder
+                    }
                 }
             }
-
-            if (!File.Exists(targetPath))
+            else
             {
-                _logger.LogWarning("File not found: {Path}", targetPath);
+                _logger.LogWarning("Path not found: {Path}", actualPath);
                 continue;
             }
 
@@ -426,9 +454,18 @@ public class CollectionSyncService
             {
                 // Each item gets a time 1 second older than the previous
                 var newTime = baseTime.AddSeconds(-(items.Count - 1 - i));
-                File.SetLastWriteTimeUtc(targetPath, newTime);
+                
+                if (File.Exists(targetPath))
+                {
+                    File.SetLastWriteTimeUtc(targetPath, newTime);
+                }
+                else if (Directory.Exists(targetPath))
+                {
+                    Directory.SetLastWriteTimeUtc(targetPath, newTime);
+                }
+                
                 successCount++;
-                _logger.LogDebug("Set mtime for {Name}: {Time}", item.Name, newTime);
+                _logger.LogDebug("Set mtime for {Name}: {Time} ({Path})", item.Name, newTime, targetPath);
             }
             catch (Exception ex)
             {
