@@ -208,7 +208,8 @@ public class CollectionSyncService
             Name = name,
             Recursive = true
         };
-        var existingCollections = _libraryManager.GetItemList(query).ToList();
+        var result = _libraryManager.GetItemsResult(query);
+        var existingCollections = result.Items;
 
         var existing = existingCollections.FirstOrDefault() as BoxSet;
         if (existing != null)
@@ -258,7 +259,8 @@ public class CollectionSyncService
                 Recursive = true,
                 HasImdbId = true
             };
-            var items = _libraryManager.GetItemList(imdbQuery).ToList();
+            var imdbResult = _libraryManager.GetItemsResult(imdbQuery);
+            var items = imdbResult.Items;
 
             var imdbMatch = items.FirstOrDefault(i => 
                 i.GetProviderId(MetadataProvider.Imdb) == imdbId);
@@ -276,7 +278,8 @@ public class CollectionSyncService
             SearchTerm = title,
             Recursive = true
         };
-        var titleMatches = _libraryManager.GetItemList(titleQuery).ToList();
+        var titleResult = _libraryManager.GetItemsResult(titleQuery);
+        var titleMatches = titleResult.Items.ToList();
 
         // Exact title match with year
         var exactMatch = titleMatches.FirstOrDefault(i =>
