@@ -13,8 +13,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Jellyfin.Controller" Version="10.10.*" />
-    <PackageReference Include="Jellyfin.Model" Version="10.10.*" />
+    <PackageReference Include="Jellyfin.Controller" Version="10.10.*">
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
+    <PackageReference Include="Jellyfin.Model" Version="10.10.*">
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.*" />
   </ItemGroup>
 

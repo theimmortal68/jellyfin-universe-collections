@@ -1,5 +1,6 @@
 using UniverseCollections.Services;
-using MediaBrowser.Common.Plugins;
+using MediaBrowser.Controller;
+using MediaBrowser.Controller.Plugins;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace UniverseCollections;
@@ -10,10 +11,10 @@ namespace UniverseCollections;
 public class PluginServiceRegistrator : IPluginServiceRegistrator
 {
     /// <inheritdoc />
-    public void RegisterServices(IServiceCollection services)
+    public void RegisterServices(IServiceCollection serviceCollection, IServerApplicationHost applicationHost)
     {
-        services.AddHttpClient();
-        services.AddSingleton<TraktService>();
-        services.AddSingleton<CollectionSyncService>();
+        serviceCollection.AddHttpClient();
+        serviceCollection.AddSingleton<TraktService>();
+        serviceCollection.AddSingleton<CollectionSyncService>();
     }
 }
