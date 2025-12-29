@@ -312,22 +312,29 @@
                         contentType: 'application/json',
                         data: JSON.stringify({ clientId, clientSecret })
                     }).then(response => {
+                        console.log('Raw response:', response);
                         return response.json();
                     }).then(data => {
-                        console.log('TraktAuth data:', data);
+                        console.log('Parsed data:', data);
+                        console.log('Data type:', typeof data);
+                        console.log('Data keys:', Object.keys(data));
+                        console.log('UserCode value:', data.UserCode);
+                        console.log('userCode value:', data.userCode);
                         
                         // Handle both camelCase and PascalCase
                         const userCode = data.UserCode || data.userCode;
                         const deviceCode = data.DeviceCode || data.deviceCode;
                         const verificationUrl = data.VerificationUrl || data.verificationUrl;
-                        const interval = data.Interval || data.interval;
+                        const interval = data.Interval || data.interval || 5;
                         
-                        if (userCode) {
-                            status.innerHTML = `Go to <a href="${verificationUrl}" target="_blank">${verificationUrl}</a> and enter code: <strong>${userCode}</strong>`;
+                        console.log('Extracted - userCode:', userCode, 'deviceCode:', deviceCode, 'verificationUrl:', verificationUrl);
+                        
+                        if (userCode && verificationUrl) {
+                            status.innerHTML = 'Go to <a href="' + verificationUrl + '" target="_blank">' + verificationUrl + '</a> and enter code: <strong>' + userCode + '</strong>';
                             this.pollTraktAuth(deviceCode, interval);
                         } else {
-                            status.textContent = 'Error: No user code received';
-                            console.error('Response:', data);
+                            status.textContent = 'Error: Missing user code or verification URL';
+                            console.error('Response data:', JSON.stringify(data, null, 2));
                         }
                     }).catch(err => {
                         console.error('TraktAuth error:', err);
@@ -354,7 +361,7 @@
                             if (accessToken) {
                                 clearInterval(poll);
                                 document.getElementById('txtTraktAccessToken').value = accessToken;
-                                status.textContent = 'Authentication successful!';
+                                status.textContent = 'Authentication successful! Click Save to store the token.';
                             }
                         }).catch(err => {
                             // Polling error - user hasn't authorized yet, keep waiting
