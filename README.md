@@ -15,15 +15,25 @@ A Jellyfin plugin that syncs Trakt lists to collections with tagging for advance
 
 ## Installation
 
-### From GitHub Releases (Recommended)
+### Via Jellyfin Plugin Catalog (Recommended)
 
-1. Download `UniverseCollections.dll` from the [latest release](https://github.com/theimmortal68/jellyfin-universe-collections/releases/latest)
-2. Create the plugin folder:
+1. In Jellyfin, go to `Dashboard -> Plugins -> Catalog`
+2. Click the gear icon (⚙️) next to "Repositories" to add a new repository
+3. Add repository URL: `https://raw.githubusercontent.com/theimmortal68/jellyfin-universe-collections/main/manifest.json`
+4. Click "Save"
+5. Search for "Universe Collections" and install
+6. Restart Jellyfin
+
+### Manual Installation
+
+1. Download `universe-collections-x.x.x.x.zip` from the [latest release](https://github.com/theimmortal68/jellyfin-universe-collections/releases/latest)
+2. Extract `UniverseCollections.dll` from the zip
+3. Create the plugin folder:
    - Linux: `/var/lib/jellyfin/plugins/UniverseCollections/`
    - Docker: `/config/plugins/UniverseCollections/`
    - Windows: `C:\ProgramData\Jellyfin\Server\plugins\UniverseCollections\`
-3. Copy `UniverseCollections.dll` to that folder
-4. Restart Jellyfin
+4. Copy `UniverseCollections.dll` to that folder
+5. Restart Jellyfin
 
 ### Building from Source
 
@@ -31,7 +41,7 @@ Prerequisites: .NET 8 SDK
 
 ```bash
 git clone https://github.com/theimmortal68/jellyfin-universe-collections.git
-cd UniverseCollections
+cd jellyfin-universe-collections
 dotnet build --configuration Release
 ```
 

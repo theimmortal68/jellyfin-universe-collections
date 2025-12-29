@@ -32,16 +32,33 @@ jobs:
         id: version
         run: |
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+            VERSION="${GITHUB_REF#refs/tags/v}"
           else
-            echo "version=0.0.0-dev" >> $GITHUB_OUTPUT
+            VERSION="0.0.0-dev"
           fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Create release zip
+        run: |
+          cd bin/Release/net8.0
+          zip ../../../universe-collections-${{ steps.version.outputs.version }}.zip UniverseCollections.dll
+          cd ../../..
+
+      - name: Calculate checksum
+        id: checksum
+        run: |
+          CHECKSUM=$(md5sum universe-collections-${{ steps.version.outputs.version }}.zip | awk '{print $1}')
+          echo "checksum=$CHECKSUM" >> $GITHUB_OUTPUT
+          echo "Checksum: $CHECKSUM"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: UniverseCollections
-          path: bin/Release/net8.0/UniverseCollections.dll
+          path: |
+            universe-collections-${{ steps.version.outputs.version }}.zip
+            bin/Release/net8.0/UniverseCollections.dll
 
   release:
     needs: build
@@ -57,8 +74,14 @@ jobs:
         with:
           name: UniverseCollections
 
+      - name: Get version
+        id: version
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: UniverseCollections.dll
+          files: universe-collections-${{ steps.version.outputs.version }}.zip
           generate_release_notes: true

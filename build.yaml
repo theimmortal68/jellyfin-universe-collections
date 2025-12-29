@@ -1,0 +1,15 @@
+---
+name: "universe-collections"
+guid: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+version: "1.0.0.0"
+jellyfin_version: "10.10.0"
+owner: "theimmortal68"
+nicename: "Universe Collections"
+description: "Sync Trakt lists to Jellyfin collections with tagging for advanced client customizations."
+overview: "Sync Trakt lists to Jellyfin collections with custom sorting and tagging."
+category: "Metadata"
+artifacts:
+  - "UniverseCollections.dll"
+build_type: "dotnet"
+dotnet_configuration: "Release"
+dotnet_framework: "net8.0"
