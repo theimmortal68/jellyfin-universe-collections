@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Universe Collections</title>
+</head>
+<body>
+    <div id="UniverseCollectionsConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-checkbox,emby-select">
+        <div data-role="content">
+            <div class="content-primary">
+                <form id="UniverseCollectionsConfigForm">
+                    <div class="sectionTitleContainer flex align-items-center">
+                        <h2 class="sectionTitle">Universe Collections</h2>
+                    </div>
+
+                    <!-- Trakt API Settings -->
+                    <div class="verticalSection">
+                        <h2 class="sectionTitle">Trakt API Settings</h2>
+                        <div class="inputContainer">
+                            <label class="inputLabel" for="txtTraktClientId">Trakt Client ID</label>
+                            <input type="text" id="txtTraktClientId" is="emby-input" />
+                            <div class="fieldDescription">Get this from <a href="https://trakt.tv/oauth/applications" target="_blank">trakt.tv/oauth/applications</a></div>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel" for="txtTraktClientSecret">Trakt Client Secret</label>
+                            <input type="password" id="txtTraktClientSecret" is="emby-input" />
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel" for="txtTraktAccessToken">Trakt Access Token</label>
+                            <input type="text" id="txtTraktAccessToken" is="emby-input" readonly />
+                            <div class="fieldDescription">
+                                <button type="button" id="btnAuthTrakt" is="emby-button" class="raised">
+                                    <span>Authenticate with Trakt</span>
+                                </button>
+                                <span id="authStatus"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sync Settings -->
+                    <div class="verticalSection">
+                        <h2 class="sectionTitle">Sync Settings</h2>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" id="chkSyncOnStartup" is="emby-checkbox" />
+                                <span>Sync on server startup</span>
+                            </label>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel" for="txtSyncInterval">Sync Interval (hours, 0 = disabled)</label>
+                            <input type="number" id="txtSyncInterval" is="emby-input" min="0" max="168" value="24" />
+                        </div>
+                    </div>
+
+                    <!-- Path Mappings -->
+                    <div class="verticalSection">
+                        <h2 class="sectionTitle">Path Mappings</h2>
+                        <div class="fieldDescription">Map Jellyfin media paths to actual filesystem paths (required for sort order when running in Docker)</div>
+                        <div id="pathMappingsContainer"></div>
+                        <button type="button" id="btnAddMapping" is="emby-button" class="raised">
+                            <span>Add Path Mapping</span>
+                        </button>
+                    </div>
+
+                    <!-- Trakt Lists -->
+                    <div class="verticalSection">
+                        <h2 class="sectionTitle">Trakt Lists</h2>
+                        <div id="traktListsContainer"></div>
+                        <button type="button" id="btnAddList" is="emby-button" class="raised">
+                            <span>Add List</span>
+                        </button>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="verticalSection">
+                        <h2 class="sectionTitle">Actions</h2>
+                        <button type="button" id="btnSyncNow" is="emby-button" class="raised">
+                            <span>Sync Now</span>
+                        </button>
+                        <span id="syncStatus"></span>
+                    </div>
+
+                    <div>
+                        <button is="emby-button" type="submit" class="raised button-submit block">
+                            <span>Save</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <style>
+            .list-item, .mapping-item {
+                background: rgba(0,0,0,0.1);
+                padding: 1em;
+                margin: 0.5em 0;
+                border-radius: 4px;
+            }
+            .list-item-header, .mapping-item-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 0.5em;
+            }
+            .list-item-fields {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1em;
+            }
+            .mapping-item-fields {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1em;
+            }
+            @media (max-width: 600px) {
+                .list-item-fields, .mapping-item-fields {
+                    grid-template-columns: 1fr;
+                }
+            }
+        </style>
+
+        <script type="text/javascript">
+            const UniverseCollectionsConfig = {
+                pluginId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+
+                loadConfig: function() {
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(this.pluginId).then(config => {
+                        document.getElementById('txtTraktClientId').value = config.TraktClientId || '';
+                        document.getElementById('txtTraktClientSecret').value = config.TraktClientSecret || '';
+                        document.getElementById('txtTraktAccessToken').value = config.TraktAccessToken || '';
+                        document.getElementById('chkSyncOnStartup').checked = config.SyncOnStartup;
+                        document.getElementById('txtSyncInterval').value = config.SyncIntervalHours || 24;
+                        
+                        this.renderLists(config.TraktLists || []);
+                        this.renderPathMappings(config.PathMappings || []);
+                        Dashboard.hideLoadingMsg();
+                    });
+                },
+
+                saveConfig: function() {
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(this.pluginId).then(config => {
+                        config.TraktClientId = document.getElementById('txtTraktClientId').value;
+                        config.TraktClientSecret = document.getElementById('txtTraktClientSecret').value;
+                        config.TraktAccessToken = document.getElementById('txtTraktAccessToken').value;
+                        config.SyncOnStartup = document.getElementById('chkSyncOnStartup').checked;
+                        config.SyncIntervalHours = parseInt(document.getElementById('txtSyncInterval').value) || 24;
+                        config.TraktLists = this.collectLists();
+                        config.PathMappings = this.collectPathMappings();
+
+                        ApiClient.updatePluginConfiguration(this.pluginId, config).then(() => {
+                            Dashboard.processPluginConfigurationUpdateResult();
+                            Dashboard.hideLoadingMsg();
+                        });
+                    });
+                },
+
+                renderLists: function(lists) {
+                    const container = document.getElementById('traktListsContainer');
+                    container.innerHTML = '';
+                    lists.forEach((list, index) => this.addListItem(list, index));
+                },
+
+                addListItem: function(list = {}, index = null) {
+                    const container = document.getElementById('traktListsContainer');
+                    if (index === null) index = container.children.length;
+
+                    const div = document.createElement('div');
+                    div.className = 'list-item';
+                    div.dataset.index = index;
+                    div.innerHTML = `
+                        <div class="list-item-header">
+                            <label>
+                                <input type="checkbox" class="list-enabled" is="emby-checkbox" ${list.Enabled !== false ? 'checked' : ''} />
+                                <span>Enabled</span>
+                            </label>
+                            <button type="button" class="btn-remove-list" is="emby-button">Remove</button>
+                        </div>
+                        <div class="list-item-fields">
+                            <div class="inputContainer">
+                                <label class="inputLabel">Trakt List ID</label>
+                                <input type="text" class="list-id" is="emby-input" value="${list.ListId || ''}" placeholder="33354427" />
+                            </div>
+                            <div class="inputContainer">
+                                <label class="inputLabel">Slug (for Wholphin)</label>
+                                <input type="text" class="list-slug" is="emby-input" value="${list.Slug || ''}" placeholder="mcu" />
+                            </div>
+                            <div class="inputContainer">
+                                <label class="inputLabel">Collection Name (optional)</label>
+                                <input type="text" class="list-name" is="emby-input" value="${list.CollectionName || ''}" placeholder="Use Trakt name" />
+                            </div>
+                            <div class="inputContainer">
+                                <label class="inputLabel">Sort Title (optional)</label>
+                                <input type="text" class="list-sort-title" is="emby-input" value="${list.SortTitle || ''}" placeholder="!040 MCU" />
+                            </div>
+                            <div class="inputContainer">
+                                <label class="inputLabel">Custom Poster Path (optional)</label>
+                                <input type="text" class="list-poster" is="emby-input" value="${list.PosterPath || ''}" placeholder="/config/posters/mcu.jpg" />
+                            </div>
+                            <div class="checkboxContainer">
+                                <label>
+                                    <input type="checkbox" class="list-clear" is="emby-checkbox" ${list.ClearBeforeSync !== false ? 'checked' : ''} />
+                                    <span>Clear before sync</span>
+                                </label>
+                            </div>
+                            <div class="checkboxContainer">
+                                <label>
+                                    <input type="checkbox" class="list-preserve-order" is="emby-checkbox" ${list.PreserveSortOrder !== false ? 'checked' : ''} />
+                                    <span>Preserve list order</span>
+                                </label>
+                            </div>
+                        </div>
+                    `;
+
+                    div.querySelector('.btn-remove-list').addEventListener('click', () => div.remove());
+                    container.appendChild(div);
+                },
+
+                collectLists: function() {
+                    const lists = [];
+                    document.querySelectorAll('.list-item').forEach(div => {
+                        lists.push({
+                            Enabled: div.querySelector('.list-enabled').checked,
+                            ListId: div.querySelector('.list-id').value,
+                            Slug: div.querySelector('.list-slug').value,
+                            CollectionName: div.querySelector('.list-name').value || null,
+                            SortTitle: div.querySelector('.list-sort-title').value || null,
+                            PosterPath: div.querySelector('.list-poster').value || null,
+                            ClearBeforeSync: div.querySelector('.list-clear').checked,
+                            PreserveSortOrder: div.querySelector('.list-preserve-order').checked
+                        });
+                    });
+                    return lists;
+                },
+
+                renderPathMappings: function(mappings) {
+                    const container = document.getElementById('pathMappingsContainer');
+                    container.innerHTML = '';
+                    mappings.forEach((mapping, index) => this.addPathMappingItem(mapping, index));
+                },
+
+                addPathMappingItem: function(mapping = {}, index = null) {
+                    const container = document.getElementById('pathMappingsContainer');
+                    if (index === null) index = container.children.length;
+
+                    const div = document.createElement('div');
+                    div.className = 'mapping-item';
+                    div.dataset.index = index;
+                    div.innerHTML = `
+                        <div class="mapping-item-header">
+                            <span>Path Mapping ${index + 1}</span>
+                            <button type="button" class="btn-remove-mapping" is="emby-button">Remove</button>
+                        </div>
+                        <div class="mapping-item-fields">
+                            <div class="inputContainer">
+                                <label class="inputLabel">Jellyfin Path (From)</label>
+                                <input type="text" class="mapping-from" is="emby-input" value="${mapping.From || ''}" placeholder="/media" />
+                            </div>
+                            <div class="inputContainer">
+                                <label class="inputLabel">Actual Path (To)</label>
+                                <input type="text" class="mapping-to" is="emby-input" value="${mapping.To || ''}" placeholder="/mnt/user/media" />
+                            </div>
+                        </div>
+                    `;
+
+                    div.querySelector('.btn-remove-mapping').addEventListener('click', () => div.remove());
+                    container.appendChild(div);
+                },
+
+                collectPathMappings: function() {
+                    const mappings = [];
+                    document.querySelectorAll('.mapping-item').forEach(div => {
+                        const from = div.querySelector('.mapping-from').value;
+                        const to = div.querySelector('.mapping-to').value;
+                        if (from && to) {
+                            mappings.push({ From: from, To: to });
+                        }
+                    });
+                    return mappings;
+                },
+
+                syncNow: function() {
+                    const status = document.getElementById('syncStatus');
+                    status.textContent = 'Syncing...';
+                    
+                    ApiClient.ajax({
+                        url: ApiClient.getUrl('UniverseCollections/Sync'),
+                        type: 'POST'
+                    }).then(() => {
+                        status.textContent = 'Sync started! Check server logs for progress.';
+                    }).catch(err => {
+                        status.textContent = 'Error: ' + err;
+                    });
+                },
+
+                authTrakt: function() {
+                    const clientId = document.getElementById('txtTraktClientId').value;
+                    const clientSecret = document.getElementById('txtTraktClientSecret').value;
+                    const status = document.getElementById('authStatus');
+
+                    if (!clientId || !clientSecret) {
+                        status.textContent = 'Please enter Client ID and Secret first.';
+                        return;
+                    }
+
+                    status.textContent = 'Starting authentication...';
+
+                    ApiClient.ajax({
+                        url: ApiClient.getUrl('UniverseCollections/TraktAuth'),
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({ clientId, clientSecret })
+                    }).then(response => {
+                        response.json().then(data => {
+                            if (data.userCode) {
+                                status.innerHTML = `Go to <a href="${data.verificationUrl}" target="_blank">${data.verificationUrl}</a> and enter code: <strong>${data.userCode}</strong>`;
+                                this.pollTraktAuth(data.deviceCode, data.interval);
+                            }
+                        });
+                    }).catch(err => {
+                        status.textContent = 'Error: ' + err;
+                    });
+                },
+
+                pollTraktAuth: function(deviceCode, interval) {
+                    const status = document.getElementById('authStatus');
+                    const clientId = document.getElementById('txtTraktClientId').value;
+                    const clientSecret = document.getElementById('txtTraktClientSecret').value;
+
+                    const poll = setInterval(() => {
+                        ApiClient.ajax({
+                            url: ApiClient.getUrl('UniverseCollections/TraktAuthPoll'),
+                            type: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify({ clientId, clientSecret, deviceCode })
+                        }).then(response => {
+                            response.json().then(data => {
+                                if (data.accessToken) {
+                                    clearInterval(poll);
+                                    document.getElementById('txtTraktAccessToken').value = data.accessToken;
+                                    status.textContent = 'Authentication successful!';
+                                }
+                            });
+                        });
+                    }, (interval + 1) * 1000);
+                }
+            };
+
+            document.getElementById('UniverseCollectionsConfigForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                UniverseCollectionsConfig.saveConfig();
+                return false;
+            });
+
+            document.getElementById('btnAddList').addEventListener('click', () => UniverseCollectionsConfig.addListItem());
+            document.getElementById('btnAddMapping').addEventListener('click', () => UniverseCollectionsConfig.addPathMappingItem());
+            document.getElementById('btnSyncNow').addEventListener('click', () => UniverseCollectionsConfig.syncNow());
+            document.getElementById('btnAuthTrakt').addEventListener('click', () => UniverseCollectionsConfig.authTrakt());
+
+            UniverseCollectionsConfig.loadConfig();
+        </script>
+    </div>
+</body>
+</html>
