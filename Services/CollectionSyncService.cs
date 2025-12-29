@@ -185,8 +185,9 @@ public class CollectionSyncService
         {
             SetSortOrderByMtime(matchedItems, config.PathMappings);
             
-            // Set collection display order to DateModified
-            collection.DisplayOrder = "DateModified";
+            // Set collection display order to Default (uses Date Modified)
+            collection.DisplayOrder = "Default";
+            _logger.LogInformation("Setting DisplayOrder to Default for collection '{Name}'", collection.Name);
             await collection.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, cancellationToken);
         }
 
