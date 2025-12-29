@@ -312,9 +312,10 @@
                         contentType: 'application/json',
                         data: JSON.stringify({ clientId, clientSecret })
                     }).then(data => {
-                        if (data.userCode) {
-                            status.innerHTML = `Go to <a href="${data.verificationUrl}" target="_blank">${data.verificationUrl}</a> and enter code: <strong>${data.userCode}</strong>`;
-                            this.pollTraktAuth(data.deviceCode, data.interval);
+                        // C# returns PascalCase properties
+                        if (data.UserCode) {
+                            status.innerHTML = `Go to <a href="${data.VerificationUrl}" target="_blank">${data.VerificationUrl}</a> and enter code: <strong>${data.UserCode}</strong>`;
+                            this.pollTraktAuth(data.DeviceCode, data.Interval);
                         } else {
                             status.textContent = 'Error: No user code received';
                         }
@@ -335,9 +336,10 @@
                             contentType: 'application/json',
                             data: JSON.stringify({ clientId, clientSecret, deviceCode })
                         }).then(data => {
-                            if (data.accessToken) {
+                            // C# returns PascalCase properties
+                            if (data.AccessToken) {
                                 clearInterval(poll);
-                                document.getElementById('txtTraktAccessToken').value = data.accessToken;
+                                document.getElementById('txtTraktAccessToken').value = data.AccessToken;
                                 status.textContent = 'Authentication successful!';
                             }
                         }).catch(err => {
