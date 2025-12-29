@@ -31,6 +31,7 @@ public class TraktService
         client.BaseAddress = new Uri(TraktApiBaseUrl);
         client.DefaultRequestHeaders.Add("trakt-api-version", "2");
         client.DefaultRequestHeaders.Add("trakt-api-key", clientId);
+        client.DefaultRequestHeaders.Add("User-Agent", "UniverseCollections/1.0 Jellyfin Plugin");
         client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
         
         if (!string.IsNullOrEmpty(accessToken))
