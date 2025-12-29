@@ -232,7 +232,7 @@ public class CollectionSyncService
 
     private async Task ClearCollectionAsync(BoxSet collection, CancellationToken cancellationToken)
     {
-        var children = collection.GetChildren(null, true).ToList();
+        var children = collection.Children.ToList();
         if (children.Count > 0)
         {
             var childIds = children.Select(c => c.Id).ToArray();
