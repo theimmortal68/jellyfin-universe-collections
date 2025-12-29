@@ -140,7 +140,6 @@ public class CollectionSyncService
         if (!string.IsNullOrEmpty(listConfig.SortTitle))
         {
             collection.ForcedSortName = listConfig.SortTitle;
-            await collection.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, cancellationToken);
             _logger.LogInformation("Set sort title: {SortTitle}", listConfig.SortTitle);
         }
 
@@ -188,13 +187,26 @@ public class CollectionSyncService
             // Set collection display order to Default (uses Date Modified)
             collection.DisplayOrder = "Default";
             _logger.LogInformation("Setting DisplayOrder to Default for collection '{Name}'", collection.Name);
-            await collection.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, cancellationToken);
         }
 
+        // Save all collection changes before uploading poster
+        await collection.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, cancellationToken);
+        
+        // Small delay to ensure database write completes
+        await Task.Delay(500, cancellationToken);
+
         // Upload custom poster if configured
-        if (!string.IsNullOrEmpty(listConfig.PosterPath) && File.Exists(listConfig.PosterPath))
+        if (!string.IsNullOrEmpty(listConfig.PosterPath))
         {
-            await UploadPosterAsync(collection, listConfig.PosterPath, cancellationToken);
+            if (File.Exists(listConfig.PosterPath))
+            {
+                _logger.LogInformation("Uploading poster from {Path}", listConfig.PosterPath);
+                await UploadPosterAsync(collection, listConfig.PosterPath, cancellationToken);
+            }
+            else
+            {
+                _logger.LogWarning("Poster file not found: {Path}", listConfig.PosterPath);
+            }
         }
 
         _logger.LogInformation("Collection '{Name}' synced with {Count} items", collectionName, matchedItems.Count);
@@ -346,8 +358,11 @@ public class CollectionSyncService
                 ? "image/png" 
                 : "image/jpeg";
 
+            _logger.LogDebug("Uploading poster: {Size} bytes, {MimeType}", imageBytes.Length, mimeType);
+
             using var stream = new MemoryStream(imageBytes);
             await _providerManager.SaveImage(collection, stream, mimeType, ImageType.Primary, null, cancellationToken);
+            
             _logger.LogInformation("Uploaded custom poster from {Path}", posterPath);
         }
         catch (Exception ex)
