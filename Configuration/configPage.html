@@ -306,27 +306,15 @@
 
                     status.textContent = 'Starting authentication...';
 
-                    ApiClient.ajax({
+                    ApiClient.fetch({
                         url: ApiClient.getUrl('UniverseCollections/TraktAuth'),
                         type: 'POST',
                         contentType: 'application/json',
                         data: JSON.stringify({ clientId, clientSecret })
                     }).then(response => {
-                        console.log('TraktAuth raw response:', response);
-                        console.log('TraktAuth response type:', typeof response);
-                        
-                        // Parse if string
-                        let data = response;
-                        if (typeof response === 'string') {
-                            try {
-                                data = JSON.parse(response);
-                            } catch (e) {
-                                console.error('Failed to parse response:', e);
-                            }
-                        }
-                        
-                        console.log('TraktAuth parsed data:', data);
-                        console.log('TraktAuth data keys:', data ? Object.keys(data) : 'null');
+                        return response.json();
+                    }).then(data => {
+                        console.log('TraktAuth data:', data);
                         
                         // Handle both camelCase and PascalCase
                         const userCode = data.UserCode || data.userCode;
@@ -338,8 +326,8 @@
                             status.innerHTML = `Go to <a href="${verificationUrl}" target="_blank">${verificationUrl}</a> and enter code: <strong>${userCode}</strong>`;
                             this.pollTraktAuth(deviceCode, interval);
                         } else {
-                            status.textContent = 'Error: No user code received. Check browser console (F12).';
-                            console.error('Full response:', JSON.stringify(data));
+                            status.textContent = 'Error: No user code received';
+                            console.error('Response:', data);
                         }
                     }).catch(err => {
                         console.error('TraktAuth error:', err);
@@ -353,11 +341,13 @@
                     const clientSecret = document.getElementById('txtTraktClientSecret').value;
 
                     const poll = setInterval(() => {
-                        ApiClient.ajax({
+                        ApiClient.fetch({
                             url: ApiClient.getUrl('UniverseCollections/TraktAuthPoll'),
                             type: 'POST',
                             contentType: 'application/json',
                             data: JSON.stringify({ clientId, clientSecret, deviceCode })
+                        }).then(response => {
+                            return response.json();
                         }).then(data => {
                             console.log('Poll response:', data);
                             const accessToken = data.AccessToken || data.accessToken;
