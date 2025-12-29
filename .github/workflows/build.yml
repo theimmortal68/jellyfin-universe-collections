@@ -26,7 +26,18 @@ jobs:
         run: dotnet restore
 
       - name: Build
-        run: dotnet build --configuration Release --no-restore
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          # Convert version to 4-part format if needed (1.0.2 -> 1.0.2.0)
+          if [[ ! "$VERSION" =~ \. ]]; then
+            VERSION="$VERSION.0.0.0"
+          elif [[ $(echo "$VERSION" | tr -cd '.' | wc -c) -eq 1 ]]; then
+            VERSION="$VERSION.0.0"
+          elif [[ $(echo "$VERSION" | tr -cd '.' | wc -c) -eq 2 ]]; then
+            VERSION="$VERSION.0"
+          fi
+          echo "Assembly version: $VERSION"
+          dotnet build --configuration Release --no-restore -p:AssemblyVersion=$VERSION -p:FileVersion=$VERSION -p:Version=${{ steps.version.outputs.version }}
 
       - name: Get version
         id: version
