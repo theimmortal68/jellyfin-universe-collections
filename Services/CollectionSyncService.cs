@@ -391,12 +391,15 @@ public class CollectionSyncService
     /// <summary>
     /// Set file modification times to preserve sort order.
     /// Files are touched in reverse order so first item has newest mtime.
+    /// Uses a date in the past to avoid items appearing in "Recently Added".
     /// </summary>
     private void SetSortOrderByMtime(List<BaseItem> items, List<PathMapping> pathMappings)
     {
         if (items.Count == 0) return;
 
-        var baseTime = DateTime.UtcNow;
+        // Use a date 2 years in the past to avoid "Recently Added" pollution
+        // Items will still sort correctly relative to each other
+        var baseTime = DateTime.UtcNow.AddYears(-2);
         var successCount = 0;
 
         // Process in reverse order: last item gets oldest time, first item gets newest
